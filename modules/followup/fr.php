@@ -42,3 +42,4 @@ $_MODULE['<{followup}prestashop>followup_edf9feeab43a7623f6afc152d1ede515'] = 'B
 $_MODULE['<{followup}prestashop>followup_a053fc9952a7dfc79282eba56ab8ad3a'] = 'Merci pour votre commande';
 $_MODULE['<{followup}prestashop>followup_7fcd592dd47028c7c1f2d0ce9168a303'] = 'Vous êtes l\'un de nos meilleurs clients';
 $_MODULE['<{followup}prestashop>followup_c2ab23672d4bb31c7664bf8e854a10f7'] = 'Vous nous manquez';
+$_MODULE['<{followup}prestashop>followup_c883ae9f0e561dadf931a60710d19eb5'] = 'Panier mis à jour il y a au moins';
