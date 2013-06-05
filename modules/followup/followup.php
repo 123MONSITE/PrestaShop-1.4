@@ -29,7 +29,7 @@ if (!defined('_PS_VERSION_'))
 
 class Followup extends Module
 {
-	public function __construct()
+	function __construct()
 	{
 		$this->name = 'followup';
 		$this->tab = 'advertising_marketing';
@@ -41,6 +41,7 @@ class Followup extends Module
 		'PS_FOLLOW_UP_ENABLE_1', 'PS_FOLLOW_UP_ENABLE_2', 'PS_FOLLOW_UP_ENABLE_3', 'PS_FOLLOW_UP_ENABLE_4', 
 		'PS_FOLLOW_UP_AMOUNT_1', 'PS_FOLLOW_UP_AMOUNT_2', 'PS_FOLLOW_UP_AMOUNT_3', 'PS_FOLLOW_UP_AMOUNT_4', 
 		'PS_FOLLOW_UP_DAYS_1', 'PS_FOLLOW_UP_DAYS_2', 'PS_FOLLOW_UP_DAYS_3', 'PS_FOLLOW_UP_DAYS_4',
+		'PS_FOLLOW_UP_THRESHOLD_1',
 		'PS_FOLLOW_UP_THRESHOLD_3',
 		'PS_FOLLOW_UP_DAYS_THRESHOLD_4',
 		'PS_FOLLOW_UP_CLEAN_DB');
@@ -64,7 +65,7 @@ class Followup extends Module
 		`date_add` DATETIME NOT NULL,
 		 INDEX `date_add`(`date_add`),
 		 INDEX `id_cart`(`id_cart`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8');
+		) ENGINE='._MYSQL_ENGINE_);
 		
 		foreach ($this->confKeys AS $key)
 			Configuration::updateValue($key, 0);
@@ -121,6 +122,8 @@ class Followup extends Module
 				<div class="margin-form"><input type="text" name="PS_FOLLOW_UP_AMOUNT_1" value="'.$conf['PS_FOLLOW_UP_AMOUNT_1'].'" size="6" onKeyUp="javascript:this.value = this.value.replace(/,/g, \'.\');" /> %</div>
 				<label>'.$this->l('Discount validity').'</label>
 				<div class="margin-form"><input type="text" name="PS_FOLLOW_UP_DAYS_1" value="'.$conf['PS_FOLLOW_UP_DAYS_1'].'" size="6" /> '.$this->l('day(s)').'</div>
+				<label>'.$this->l('Cart updated x days ago').'</label>
+				<div class="margin-form"><input type="text" name="PS_FOLLOW_UP_THRESHOLD_1" value="'.$conf['PS_FOLLOW_UP_THRESHOLD_1'].'" size="6" /> '.$this->l('day(s)').'</div>
 				<p>'.$this->l('Next process will send:').' <b>'.(int)($n1).' '.($n1 > 1 ? $this->l('e-mails') : $this->l('e-mail')).'</b></p>
 				<hr size="1" />
 				<p><b>2. '.$this->l('Re-order').'</b><br /><br />'.$this->l('For each validated order, generate a discount and send it to the customer.').'</p>
@@ -274,7 +277,7 @@ class Followup extends Module
 	{
 		$emailLogs = $this->getLogsEmail(1);
 		$sql = '
-			SELECT c.id_cart, o.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
+			SELECT c.id_cart, c.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
 			FROM '._DB_PREFIX_.'cart c
 			LEFT JOIN '._DB_PREFIX_.'orders o ON (o.id_cart = c.id_cart)
 			LEFT JOIN '._DB_PREFIX_.'customer cu ON (cu.id_customer = c.id_customer)
@@ -282,6 +285,10 @@ class Followup extends Module
 
 		if (!empty($emailLogs))
 			$sql .= ' AND c.id_cart NOT IN ('.join(',', $emailLogs).')';
+		
+		$treshold_days = (int)(Configuration::get('PS_FOLLOW_UP_THRESHOLD_1'));
+		if ($treshold_days > 0)
+			$sql .= ' AND c.date_upd > DATE_ADD(CURDATE(),INTERVAL '.$treshold_days.' DAY)';
 
 		$emails = Db::getInstance()->ExecuteS($sql);
 		
@@ -345,7 +352,7 @@ class Followup extends Module
 	{
 		$emailLogs =  $this->getLogsEmail(2);
 		$sql = '
-			SELECT o.id_order, c.id_cart, o.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
+			SELECT o.id_order, c.id_cart, c.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
 			FROM '._DB_PREFIX_.'orders o
 			LEFT JOIN '._DB_PREFIX_.'customer cu ON (cu.id_customer = o.id_customer)
 			LEFT JOIN '._DB_PREFIX_.'cart c ON (c.id_cart = o.id_cart)
@@ -378,7 +385,7 @@ class Followup extends Module
 		$emailLogs =  $this->getLogsEmail(3);
 
 		$sql = '
-			SELECT SUM(o.total_paid) total, c.id_cart, o.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
+			SELECT SUM(o.total_paid) total, c.id_cart, c.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
 			FROM '._DB_PREFIX_.'orders o
 			LEFT JOIN '._DB_PREFIX_.'customer cu ON (cu.id_customer = o.id_customer)
 			LEFT JOIN '._DB_PREFIX_.'cart c ON (c.id_cart = o.id_cart)
@@ -422,7 +429,7 @@ class Followup extends Module
 	{
 		$emailLogs =  $this->getLogsEmail(4);
 		$sql = '
-			SELECT o.id_lang, c.id_cart, cu.id_customer, cu.firstname, cu.lastname, cu.email, (SELECT COUNT(o.id_order) FROM '._DB_PREFIX_.'orders o WHERE o.id_customer = cu.id_customer and o.valid = 1) nb_orders
+			SELECT c.id_lang, c.id_cart, cu.id_customer, cu.firstname, cu.lastname, cu.email, (SELECT COUNT(o.id_order) FROM '._DB_PREFIX_.'orders o WHERE o.id_customer = cu.id_customer and o.valid = 1) nb_orders
 			FROM '._DB_PREFIX_.'customer cu
 			LEFT JOIN '._DB_PREFIX_.'orders o ON (o.id_customer = cu.id_customer)
 			LEFT JOIN '._DB_PREFIX_.'cart c ON (c.id_cart = o.id_cart)
@@ -506,3 +513,4 @@ class Followup extends Module
 		}
 	}
 }
+
