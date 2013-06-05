@@ -41,6 +41,7 @@ class Followup extends Module
 		'PS_FOLLOW_UP_ENABLE_1', 'PS_FOLLOW_UP_ENABLE_2', 'PS_FOLLOW_UP_ENABLE_3', 'PS_FOLLOW_UP_ENABLE_4', 
 		'PS_FOLLOW_UP_AMOUNT_1', 'PS_FOLLOW_UP_AMOUNT_2', 'PS_FOLLOW_UP_AMOUNT_3', 'PS_FOLLOW_UP_AMOUNT_4', 
 		'PS_FOLLOW_UP_DAYS_1', 'PS_FOLLOW_UP_DAYS_2', 'PS_FOLLOW_UP_DAYS_3', 'PS_FOLLOW_UP_DAYS_4',
+		'PS_FOLLOW_UP_THRESHOLD_1',
 		'PS_FOLLOW_UP_THRESHOLD_3',
 		'PS_FOLLOW_UP_DAYS_THRESHOLD_4',
 		'PS_FOLLOW_UP_CLEAN_DB');
@@ -121,6 +122,8 @@ class Followup extends Module
 				<div class="margin-form"><input type="text" name="PS_FOLLOW_UP_AMOUNT_1" value="'.$conf['PS_FOLLOW_UP_AMOUNT_1'].'" size="6" onKeyUp="javascript:this.value = this.value.replace(/,/g, \'.\');" /> %</div>
 				<label>'.$this->l('Discount validity').'</label>
 				<div class="margin-form"><input type="text" name="PS_FOLLOW_UP_DAYS_1" value="'.$conf['PS_FOLLOW_UP_DAYS_1'].'" size="6" /> '.$this->l('day(s)').'</div>
+				<label>'.$this->l('Cart updated x days ago').'</label>
+				<div class="margin-form"><input type="text" name="PS_FOLLOW_UP_THRESHOLD_1" value="'.$conf['PS_FOLLOW_UP_THRESHOLD_1'].'" size="6" /> '.$this->l('day(s)').'</div>
 				<p>'.$this->l('Next process will send:').' <b>'.(int)($n1).' '.($n1 > 1 ? $this->l('e-mails') : $this->l('e-mail')).'</b></p>
 				<hr size="1" />
 				<p><b>2. '.$this->l('Re-order').'</b><br /><br />'.$this->l('For each validated order, generate a discount and send it to the customer.').'</p>
@@ -282,6 +285,10 @@ class Followup extends Module
 
 		if (!empty($emailLogs))
 			$sql .= ' AND c.id_cart NOT IN ('.join(',', $emailLogs).')';
+		
+		$treshold_days = (int)(Configuration::get('PS_FOLLOW_UP_THRESHOLD_1'));
+		if ($treshold_days > 0)
+			$sql .= ' AND c.date_upd > DATE_ADD(CURDATE(),INTERVAL '.$treshold_days.' DAY)';
 
 		$emails = Db::getInstance()->ExecuteS($sql);
 		
